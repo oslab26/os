@@ -1,0 +1,883 @@
+SUM OF DIGITS
+#!/bin/bash
+echo "Enter a number:"
+read number
+sum=0
+temp=$number
+while ((temp > 0 )); do
+    digit=$((temp % 10))    # Extract the last digit
+    sum=$((sum + digit))    # Add the digit to the sum
+    temp=$((temp / 10))     # Remove the last digit
+done
+echo "The sum of the digits of $number is: $sum"
+-------------------------------------------
+  DESCENDING ORDER
+#!/bin/bash
+echo "Enter the number of elements in the array:"
+read n
+echo "Enter the elements of the array:"
+for ((i = 0; i < n; i++)); do
+    read array[i]
+done
+for ((i = 0; i < n; i++)); do
+    for ((j = 0; j < n - i - 1; j++)); do
+        if (( ${array[j]} < ${array[j + 1]} )); then
+            # Swap elements
+            temp=${array[j]}
+            array[j]=${array[j + 1]}
+            array[j + 1]=$temp
+        fi
+    done
+done
+echo "Array sorted in descending order:"
+for ((i = 0; i < n; i++)); do
+    echo -n "${array[i]} "
+done
+echo
+----------------------------------------
+  FCFS
+#include <stdio.h>
+#include <stdlib.h>
+void fcfs_scheduling(int n, int *burst_time) {
+    int *waiting_time = (int*)malloc(n * sizeof(int));
+    int *turnaround_time = (int*)malloc(n * sizeof(int));
+    int total_waiting_time = 0;
+    waiting_time[0] = 0;
+    for (int i = 1; i < n; i++) {
+        waiting_time[i] = waiting_time[i-1] + burst_time[i-1];
+        total_waiting_time += waiting_time[i];
+    }
+    for (int i = 0; i < n; i++) {
+        turnaround_time[i] = waiting_time[i] + burst_time[i];
+    }
+    printf("Process\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t\t%d\t\t%d\n", 
+               i+1, burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+    printf("Average Waiting Time: %.2f\n", 
+           (float)total_waiting_time / n);
+    free(waiting_time);
+    free(turnaround_time);
+}
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    int *burst_time = (int*)malloc(n * sizeof(int));
+    printf("Enter burst times:\n");
+    for (int i = 0; i < n; i++) {
+        printf("Process %d: ", i+1);
+        scanf("%d", &burst_time[i]);
+    }
+    fcfs_scheduling(n, burst_time);
+    free(burst_time);
+    return 0;
+}
+//input
+//4
+//5
+//9
+//2
+//3
+--------------------------------------------
+  SJS NON-PREEMPTIVE
+#include <stdio.h>
+#include <stdbool.h>
+#include <limits.h>
+typedef struct {
+    int pid;
+    int burst_time;
+    int arrival_time;
+    int waiting_time;
+    int turnaround_time;
+} Process;
+void non_preemptive_sjf(Process p[], int n) {
+    int current_time = 0;
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    bool *completed = calloc(n, sizeof(bool));
+    for (int count = 0; count < n; count++) {
+        int shortest_job = -1;
+        int min_burst = INT_MAX;
+        for (int j = 0; j < n; j++) {
+            if (!completed[j] && p[j].arrival_time <= current_time && p[j].burst_time < min_burst) {
+                shortest_job = j;
+                min_burst = p[j].burst_time;
+            }
+        }
+        if (shortest_job == -1) {
+            current_time++;
+            count--;
+            continue;
+        }
+        p[shortest_job].waiting_time = current_time - p[shortest_job].arrival_time;
+        current_time += p[shortest_job].burst_time;
+        p[shortest_job].turnaround_time = p[shortest_job].waiting_time + p[shortest_job].burst_time;
+        total_waiting_time += p[shortest_job].waiting_time;
+        total_turnaround_time += p[shortest_job].turnaround_time;
+        completed[shortest_job] = true;
+    }
+    printf("\nNon-Preemptive SJF Scheduling Results:\n");
+    printf("PID\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\n", 
+               p[i].pid, p[i].burst_time, 
+               p[i].waiting_time, p[i].turnaround_time);
+    }
+    printf("\nAverage Waiting Time: %.2f\n", total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", total_turnaround_time / n);
+    free(completed);
+}
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d Arrival Time: ", i+1);
+        scanf("%d", &p[i].arrival_time);
+        printf("Process %d Burst Time: ", i+1);
+        scanf("%d", &p[i].burst_time);
+    }
+    non_preemptive_sjf(p, n);
+    return 0;
+}
+---------------------------------------------------
+  SJS PREEMPTIVE
+#include <stdio.h>
+#include <limits.h>
+typedef struct {
+    int pid;
+    int burst_time;
+    int arrival_time;
+    int remaining_time;
+    int waiting_time;
+    int turnaround_time;
+} Process;
+void preemptive_sjf(Process p[], int n) {
+    int current_time = 0;
+    int completed = 0;
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    while (completed != n) {
+        int shortest_job = -1;
+        int min_remaining_time = INT_MAX;
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrival_time <= current_time && 
+                p[i].remaining_time > 0 && 
+                p[i].remaining_time < min_remaining_time) {
+                shortest_job = i;
+                min_remaining_time = p[i].remaining_time;
+            }
+        }
+        if (shortest_job == -1) {
+            current_time++;
+            continue;
+        }
+        p[shortest_job].remaining_time--;
+        if (p[shortest_job].remaining_time == 0) {
+            completed++;
+            p[shortest_job].turnaround_time = current_time + 1 - p[shortest_job].arrival_time;
+            p[shortest_job].waiting_time = p[shortest_job].turnaround_time - p[shortest_job].burst_time;
+            
+            total_waiting_time += p[shortest_job].waiting_time;
+            total_turnaround_time += p[shortest_job].turnaround_time;
+        }
+        current_time++;
+    }
+    printf("\nPreemptive SJF Scheduling Results:\n");
+    printf("PID\tBurst Time\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\n", 
+               p[i].pid, p[i].burst_time, 
+               p[i].waiting_time, p[i].turnaround_time);
+    }
+    printf("\nAverage Waiting Time: %.2f\n", total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", total_turnaround_time / n);
+}
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d Arrival Time: ", i+1);
+        scanf("%d", &p[i].arrival_time);
+        printf("Process %d Burst Time: ", i+1);
+        scanf("%d", &p[i].burst_time);
+        p[i].remaining_time = p[i].burst_time;
+    }
+    preemptive_sjf(p, n);
+    return 0;
+}
+----------------------------------------------------
+  PRIORITY NON-PREEMPTIVE
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
+typedef struct {
+    int pid;
+    int burst_time;
+    int arrival_time;
+    int priority;
+    int waiting_time;
+    int turnaround_time;
+    bool completed;
+} Process;
+int compare_arrival(const void *a, const void *b) {
+    return ((Process*)a)->arrival_time - ((Process*)b)->arrival_time;
+}
+void non_preemptive_priority_scheduling(Process p[], int n) {
+    qsort(p, n, sizeof(Process), compare_arrival);
+    int current_time = 0;
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    int completed_processes = 0;
+    while (completed_processes < n) {
+        int highest_priority_job = -1;
+        int max_priority = INT_MAX;
+        for (int i = 0; i < n; i++) {
+            if (!p[i].completed && p[i].arrival_time <= current_time) {
+                if (p[i].priority < max_priority) {
+                    highest_priority_job = i;
+                    max_priority = p[i].priority;
+                }
+            }
+        }
+        if (highest_priority_job == -1) {
+            current_time++;
+            continue;
+        }
+        current_time += p[highest_priority_job].burst_time;
+        p[highest_priority_job].turnaround_time = current_time - p[highest_priority_job].arrival_time;
+        p[highest_priority_job].waiting_time = p[highest_priority_job].turnaround_time - p[highest_priority_job].burst_time;
+        p[highest_priority_job].completed = true;
+        total_waiting_time += p[highest_priority_job].waiting_time;
+        total_turnaround_time += p[highest_priority_job].turnaround_time;
+        completed_processes++;
+    }
+    printf("\nNon-Preemptive Priority Scheduling Results:\n");
+    printf("PID\tArrival Time\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n", 
+               p[i].pid, p[i].arrival_time, p[i].burst_time, p[i].priority,
+               p[i].waiting_time, p[i].turnaround_time);
+    }
+    printf("\nAverage Waiting Time: %.2f\n", total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", total_turnaround_time / n);
+}
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process *p = malloc(n * sizeof(Process));
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d Arrival Time: ", i+1);
+        scanf("%d", &p[i].arrival_time);
+        printf("Process %d Burst Time: ", i+1);
+        scanf("%d", &p[i].burst_time);
+        printf("Process %d Priority (lower number = higher priority): ", i+1);
+        scanf("%d", &p[i].priority);
+        p[i].completed = false;
+    }
+    non_preemptive_priority_scheduling(p, n);
+    free(p);
+    return 0;
+}
+--------------------------------------------------
+  PRIORITY PREEMPTIVE
+#include <stdio.h>
+#include <limits.h>
+typedef struct {
+    int pid;
+    int burst_time;
+    int arrival_time;
+    int priority;
+    int remaining_time;
+    int waiting_time;
+    int turnaround_time;
+} Process;
+void preemptive_priority_scheduling(Process p[], int n) {
+    int current_time = 0;
+    int completed = 0;
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    while (completed != n) {
+        int highest_priority_job = -1;
+        int max_priority = INT_MIN;
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrival_time <= current_time && 
+                p[i].remaining_time > 0 && 
+                p[i].priority > max_priority) {
+                highest_priority_job = i;
+                max_priority = p[i].priority;
+            }
+        }
+        if (highest_priority_job == -1) {
+            current_time++;
+            continue;
+        }
+        p[highest_priority_job].remaining_time--;
+        if (p[highest_priority_job].remaining_time == 0) {
+            completed++;
+            p[highest_priority_job].turnaround_time = current_time + 1 - p[highest_priority_job].arrival_time;
+            p[highest_priority_job].waiting_time = p[highest_priority_job].turnaround_time - p[highest_priority_job].burst_time;   
+            total_waiting_time += p[highest_priority_job].waiting_time;
+            total_turnaround_time += p[highest_priority_job].turnaround_time;
+        }
+        current_time++;
+    }
+    printf("\nPreemptive Priority Scheduling Results:\n");
+    printf("PID\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\t\t%d\n", 
+               p[i].pid, p[i].burst_time, p[i].priority,
+               p[i].waiting_time, p[i].turnaround_time);
+    }
+    printf("\nAverage Waiting Time: %.2f\n", total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", total_turnaround_time / n);
+}
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d Arrival Time: ", i+1);
+        scanf("%d", &p[i].arrival_time);
+        printf("Process %d Burst Time: ", i+1);
+        scanf("%d", &p[i].burst_time);
+        printf("Process %d Priority (lower number = higher priority): ", i+1);
+        scanf("%d", &p[i].priority);
+        p[i].remaining_time = p[i].burst_time;
+    }
+    preemptive_priority_scheduling(p, n);
+    return 0;
+}
+--------------------------------------------------
+  ROUND ROBIN
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+typedef struct {
+    int process_id;
+    int arrival_time;
+    int burst_time;
+    int remaining_time;
+    int waiting_time;
+    int turnaround_time;
+} Process;
+void round_robin_scheduling(Process *processes, int n, int time_quantum) {
+    int current_time = 0;
+    int completed_processes = 0;
+    int total_waiting_time = 0;
+    int total_turnaround_time = 0;
+    while (completed_processes < n) {
+        bool process_executed = false;
+        for (int i = 0; i < n; i++) {
+            if (processes[i].arrival_time <= current_time && processes[i].remaining_time > 0) {
+                process_executed = true;
+                if (processes[i].remaining_time > time_quantum) {
+                    current_time += time_quantum;
+                    processes[i].remaining_time -= time_quantum;
+                } else {
+                    current_time += processes[i].remaining_time;
+                    processes[i].waiting_time = current_time - processes[i].arrival_time - processes[i].burst_time;
+                    processes[i].turnaround_time = current_time - processes[i].arrival_time;
+                    processes[i].remaining_time = 0;
+                    completed_processes++;
+                }
+            }
+        }
+        if (!process_executed) {
+            current_time++;
+        }
+    }
+    printf("Process\tArrival\tBurst\tWaiting\tTurnaround\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\n",
+               processes[i].process_id,
+               processes[i].arrival_time,
+               processes[i].burst_time,
+               processes[i].waiting_time,
+               processes[i].turnaround_time);
+        total_waiting_time += processes[i].waiting_time;
+        total_turnaround_time += processes[i].turnaround_time;
+    }
+    printf("\nAverage Waiting Time: %.2f\n", (float)total_waiting_time / n);
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / n);
+}
+int main() {
+    int n, time_quantum;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process *processes = malloc(n * sizeof(Process));
+    for (int i = 0; i < n; i++) {
+        processes[i].process_id = i + 1;
+        printf("Enter arrival time for Process %d: ", i+1);
+        scanf("%d", &processes[i].arrival_time);
+        printf("Enter burst time for Process %d: ", i+1);
+        scanf("%d", &processes[i].burst_time);
+        processes[i].remaining_time = processes[i].burst_time;
+    }
+    printf("Enter time quantum: ");
+    scanf("%d", &time_quantum);
+    round_robin_scheduling(processes, n, time_quantum);
+    free(processes);
+    return 0;
+}
+//input
+//4
+//5
+//9
+//2
+//3
+-----------------------------------------------------------
+  SYSTEM CALLS
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+int main() {
+    int file_descriptor;
+    char data_to_write[] = "Hello, System Calls!";
+    char buffer[100];
+    ssize_t bytes_read;
+    file_descriptor = open("example.txt", O_WRONLY | O_CREAT, 0644);
+    if (file_descriptor == -1) {
+        perror("open");
+        exit(1);
+    }
+    ssize_t bytes_written = write(file_descriptor, data_to_write, 
+                                  sizeof(data_to_write) - 1);
+    if (bytes_written == -1) {
+        perror("write");
+        exit(1);
+    }
+    printf("Wrote %zd bytes to the file.\n", bytes_written);
+    if (close(file_descriptor) == -1) {
+        perror("close");
+        exit(1);
+    }
+    if (chmod("example.txt", 0600) == -1) {
+        perror("chmod");
+        exit(1);
+    }
+    printf("Changed file permissions to read/write for owner only.\n");
+    file_descriptor = open("example.txt", O_RDONLY);
+    if (file_descriptor == -1) {
+        perror("open");
+        exit(1);
+    }
+    bytes_read = read(file_descriptor, buffer, sizeof(buffer));
+    if (bytes_read == -1) {
+        perror("read");
+        exit(1);
+    }
+    buffer[bytes_read] = '\0';
+    printf("Read from file: %s\n", buffer);
+    if (close(file_descriptor) == -1) {
+        perror("close");
+        exit(1);
+    }
+    return 0;
+}
+---------------------------------------------------------
+  MULTITHREAD
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#define MAX 3  
+int A[MAX][MAX];
+int B[MAX][MAX]; 
+int result_add[MAX][MAX];
+int result_mul[MAX][MAX]; 
+typedef struct {
+    int row;
+    int col;
+} MatrixPos;
+void *matrix_add(void *param) {
+    MatrixPos *pos = (MatrixPos *)param;
+    int row = pos->row;
+    int col = pos->col;
+    result_add[row][col] = A[row][col] + B[row][col];
+    pthread_exit(0);
+}
+void *matrix_multiply(void *param) {
+    MatrixPos *pos = (MatrixPos *)param;
+    int row = pos->row;
+    int col = pos->col;
+    result_mul[row][col] = 0;
+    for (int k = 0; k < MAX; k++) {
+        result_mul[row][col] += A[row][k] * B[k][col];
+    }
+    pthread_exit(0);
+}
+int main() {
+    printf("Enter elements of 3x3 matrix A:\n");
+    for (int i = 0; i < MAX; i++)
+        for (int j = 0; j < MAX; j++)
+            scanf("%d", &A[i][j]);
+    printf("Enter elements of 3x3 matrix B:\n");
+    for (int i = 0; i < MAX; i++)
+        for (int j = 0; j < MAX; j++)
+            scanf("%d", &B[i][j]);
+    pthread_t threads_add[MAX][MAX];
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            MatrixPos *pos = (MatrixPos *)malloc(sizeof(MatrixPos));
+            pos->row = i;
+            pos->col = j;
+            pthread_create(&threads_add[i][j], NULL, matrix_add, (void *)pos);
+        }
+    }
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            pthread_join(threads_add[i][j], NULL);
+        }
+    }
+    printf("\nResult of matrix addition:\n");
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            printf("%d ", result_add[i][j]);
+        }
+        printf("\n");
+    }
+    pthread_t threads_mul[MAX][MAX];
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            MatrixPos *pos = (MatrixPos *)malloc(sizeof(MatrixPos));
+            pos->row = i;
+            pos->col = j;
+            pthread_create(&threads_mul[i][j], NULL, matrix_multiply, (void *)pos);
+        }
+    }
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            pthread_join(threads_mul[i][j], NULL);
+        }
+    }
+    printf("\nResult of matrix multiplication:\n");
+    for (int i = 0; i < MAX; i++) {
+        for (int j = 0; j < MAX; j++) {
+            printf("%d ", result_mul[i][j]);
+        }
+        printf("\n");
+    }
+    return 0;
+}
+-----------------------------------------------------
+  BANKER
+#include <stdio.h>
+int main() {
+int n, m;
+printf("Enter the number of processes: ");
+scanf("%d", &n);
+printf("Enter the number of resource types: ");
+scanf("%d", &m);
+int max[n][m], allocation[n][m], need[n][m], available[m];
+int finish[n], safeSeq[n];
+printf("Enter the maximum resource instances for each resource type:\n");
+for (int i = 0; i < m; i++) {
+printf("Resource type %d: ", i);
+scanf("%d", &available[i]);
+}
+printf("Enter the maximum resource allocation for each process:\n");
+for (int i = 0; i < n; i++) {
+printf("Process %d: ", i);
+for (int j = 0; j < m; j++) {
+scanf("%d", &max[i][j]);
+}
+finish[i] = 0; 
+}
+printf("Enter the current resource allocation for each process:\n");
+for (int i = 0; i < n; i++) {
+printf("Process %d: ", i);
+for (int j = 0; j < m; j++) {
+scanf("%d", &allocation[i][j]);
+available[j] -= allocation[i][j]; 
+}
+}
+for (int i = 0; i < n; i++) {
+for (int j = 0; j < m; j++) {
+need[i][j] = max[i][j] - allocation[i][j];
+}
+}
+int count = 0;
+while (count < n) {
+int found = 0;
+for (int i = 0; i < n; i++) {
+if (finish[i] == 0) {
+int j;
+for (j = 0; j < m; j++) {
+if (need[i][j] > available[j]) {
+        break;
+}
+}
+if (j == m) {
+for (int k = 0; k < m; k++) {
+available[k] += allocation[i][k];
+}
+safeSeq[count++] = i;
+finish[i] = 1;
+found = 1;
+}
+}
+}
+if (!found) {
+printf("System is NOT in a safe state.\n");
+return 1; 
+}
+}
+printf("System is in a safe state.\nSafe Sequence: ");
+for (int i = 0; i < n - 1; i++) {
+printf("P%d -> ", safeSeq[i]);
+}
+printf("P%d\n", safeSeq[n - 1]);
+return 0;
+}
+
+Output:
+Enter the number of processes: 3 
+Enter the number of resource types: 3 
+Enter the maximum resource instances for each resource type: 
+Resource type 0: 10 
+Resource type 1: 5 
+Resource type 2: 7 
+Enter the maximum resource allocation for each process: 
+Process 0: 7 5 3 
+Process 1: 3 2 2
+Process 2: 9 0 2 
+Enter the current resource allocation for each process: 
+Process 0: 0 1 0 
+Process 1: 2 0 0 
+Process 2: 3 0 2 
+System is in a safe state. Safe Sequence: P1 -> P2 -> P0
+-------------------------------------------------------
+  FIFO
+#include <stdio.h>
+#include <stdbool.h>
+#define MAX_FRAMES 10
+#define MAX_REFERENCE 100
+int fifoPageFaults(int *referenceString, int length, int capacity) {
+    int pageFrames[MAX_FRAMES];
+    int frameCount = 0;
+    int pageFaults = 0;
+    int nextReplaceIndex = 0;
+    for (int i = 0; i < length; i++) {
+        bool pageFound = false;
+        for (int j = 0; j < frameCount; j++) {
+            if (pageFrames[j] == referenceString[i]) {
+                pageFound = true;
+                break;
+            }
+        }
+        if (!pageFound) {
+            pageFaults++;
+            if (frameCount < capacity) {
+                pageFrames[frameCount++] = referenceString[i];
+            } else {
+                pageFrames[nextReplaceIndex] = referenceString[i];
+                nextReplaceIndex = (nextReplaceIndex + 1) % capacity;
+            }
+        }
+    }
+    return pageFaults;
+}
+int main() {
+    int referenceString[MAX_REFERENCE];
+    int length, capacity;
+    printf("Enter the number of page frames: ");
+    scanf("%d", &capacity);
+    printf("Enter the length of reference string: ");
+    scanf("%d", &length);
+    printf("Enter the reference string elements:\n");
+    for (int i = 0; i < length; i++) {
+        printf("Element %d: ", i+1);
+        scanf("%d", &referenceString[i]);
+    }
+    int pageFaults = fifoPageFaults(referenceString, length, capacity);
+    printf("\nReference String: ");
+    for (int i = 0; i < length; i++) {
+        printf("%d ", referenceString[i]);
+    }
+    printf("\nPage Frames: %d\n", capacity);
+    printf("FIFO Page Faults: %d\n", pageFaults);
+    return 0;
+}
+
+Enter the number of page frames: 3
+Enter the length of reference string: 7
+Enter the reference string elements:
+Element 1: 1
+Element 2: 2
+Element 3: 3
+Element 4: 4
+Element 5: 1
+Element 6: 2
+Element 7: 5
+Reference String: 1 2 3 4 1 2 5
+Page Frames: 3
+FIFO Page Faults: 7
+------------------------------------------------
+  LRU
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#define MAX_FRAMES 10
+#define MAX_REFERENCE 100
+int lruPageFaults(int *referenceString, int length, int capacity) {
+    int pageFrames[MAX_FRAMES];
+    int lastUsed[MAX_FRAMES];
+    int frameCount = 0;
+    int pageFaults = 0;
+    memset(lastUsed, -1, sizeof(lastUsed));
+    for (int i = 0; i < length; i++) {
+        bool pageFound = false;
+        for (int j = 0; j < frameCount; j++) {
+            if (pageFrames[j] == referenceString[i]) {
+                pageFound = true;
+                lastUsed[j] = i;
+                break;
+            }
+        }
+        if (!pageFound) {
+            pageFaults++;
+            if (frameCount < capacity) {
+                pageFrames[frameCount] = referenceString[i];
+                lastUsed[frameCount] = i;
+                frameCount++;
+            } else {
+                int lruIndex = 0;
+                for (int j = 1; j < capacity; j++) {
+                    if (lastUsed[j] < lastUsed[lruIndex]) {
+                        lruIndex = j;
+                    }
+                }
+                pageFrames[lruIndex] = referenceString[i];
+                lastUsed[lruIndex] = i;
+            }
+        }
+    }
+    return pageFaults;
+}
+int main() {
+    int referenceString[MAX_REFERENCE];
+    int length, capacity;
+    printf("Enter the number of page frames: ");
+    scanf("%d", &capacity);
+    printf("Enter the length of reference string: ");
+    scanf("%d", &length);
+    printf("Enter the reference string elements:\n");
+    for (int i = 0; i < length; i++) {
+        printf("Element %d: ", i+1);
+        scanf("%d", &referenceString[i]);
+    }
+    int pageFaults = lruPageFaults(referenceString, length, capacity);
+    printf("\nReference String: ");
+    for (int i = 0; i < length; i++) {
+        printf("%d ", referenceString[i]);
+    }
+    printf("\nPage Frames: %d\n", capacity);
+    printf("LRU Page Faults: %d\n", pageFaults);
+    return 0;
+}
+
+Enter the number of page frames: 3
+Enter the length of reference string: 7
+Enter the reference string elements:
+Element 1: 1
+Element 2: 2
+Element 3: 3
+Element 4: 4
+Element 5: 1
+Element 6: 2
+Element 7: 3
+
+Reference String: 1 2 3 4 1 2 3
+Page Frames: 3
+LRU Page Faults: 7
+--------------------------------------------------
+  OPTIMAL
+#include <stdio.h>
+#include <stdbool.h>
+#include <limits.h>
+#define MAX_FRAMES 10
+#define MAX_REFERENCE 100
+int optimalPageFaults(int *referenceString, int length, int capacity) {
+    int pageFrames[MAX_FRAMES];
+    int frameCount = 0;
+    int pageFaults = 0;
+    for (int i = 0; i < length; i++) {
+        bool pageFound = false;
+        for (int j = 0; j < frameCount; j++) {
+            if (pageFrames[j] == referenceString[i]) {
+                pageFound = true;
+                break;
+            }
+        }
+        if (!pageFound) {
+            pageFaults++;
+            if (frameCount < capacity) {
+                pageFrames[frameCount++] = referenceString[i];
+            } else {
+                int replaceIndex = -1;
+                int maxDistance = -1;
+                for (int j = 0; j < capacity; j++) {
+                    int futureUse = length;
+                    for (int k = i + 1; k < length; k++) {
+                        if (pageFrames[j] == referenceString[k]) {
+                            futureUse = k;
+                            break;
+                        }
+                    }
+                    if (futureUse - i > maxDistance) {
+                        maxDistance = futureUse - i;
+                        replaceIndex = j;
+                    }
+                }
+                pageFrames[replaceIndex] = referenceString[i];
+            }
+        }
+    }
+    return pageFaults;
+}
+int main() {
+    int referenceString[MAX_REFERENCE];
+    int length, capacity;
+    printf("Enter the number of page frames: ");
+    scanf("%d", &capacity);
+    printf("Enter the length of reference string: ");
+    scanf("%d", &length);
+    printf("Enter the reference string elements:\n");
+    for (int i = 0; i < length; i++) {
+        printf("Element %d: ", i+1);
+        scanf("%d", &referenceString[i]);
+    }
+    int pageFaults = optimalPageFaults(referenceString, length, capacity);
+    printf("\nReference String: ");
+    for (int i = 0; i < length; i++) {
+        printf("%d ", referenceString[i]);
+    }
+    printf("\nPage Frames: %d\n", capacity);
+    printf("Optimal Page Faults: %d\n", pageFaults);
+    return 0;
+}
+
+Enter the number of page frames: 3
+Enter the length of reference string: 7
+Enter the reference string elements:
+Element 1: 1
+Element 2: 2
+Element 3: 3
+Element 4: 4
+Element 5: 1
+Element 6: 2
+Element 7: 5
+
+Reference String: 1 2 3 4 1 2 5
+Page Frames: 3
+Optimal Page Faults: 5
