@@ -466,7 +466,7 @@ int main() {
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/stat.h>
+#include <time.h>
 int main() {
     int file_descriptor;
     char data_to_write[] = "Hello, System Calls!";
@@ -488,11 +488,12 @@ int main() {
         perror("close");
         exit(1);
     }
-    if (chmod("example.txt", 0600) == -1) {
-        perror("chmod");
+    time_t current_time;
+    if ((current_time = time(NULL)) == -1) {
+        perror("time");
         exit(1);
     }
-    printf("Changed file permissions to read/write for owner only.\n");
+    printf("Current System Time: %s", ctime(&current_time));
     file_descriptor = open("example.txt", O_RDONLY);
     if (file_descriptor == -1) {
         perror("open");
